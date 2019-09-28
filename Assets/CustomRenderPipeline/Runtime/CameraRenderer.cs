@@ -1,20 +1,9 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class CameraRenderer {
+public partial class CameraRenderer {
 
     static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
-    static ShaderTagId[] legacyShaderTagIds = {
-        new ShaderTagId("Always"),
-        new ShaderTagId("ForwardBase"),
-        new ShaderTagId("Vertex"),
-        new ShaderTagId("PrepassBase"),
-        new ShaderTagId("VertexLMRGBM"),
-        new ShaderTagId("VertexLM")
-    };
-
-    static Material errorMat;
-
     /**
      * We want to see the cmd buffer in the profiler.
      */
@@ -29,6 +18,11 @@ public class CameraRenderer {
         this.ctx = ctx;
         this.cam = cam;
 
+        // Allow secondary cameras
+        PrepareBuffer();
+        // Allow UI Drawing in the scene view
+        PrepareForSceneWindow();
+
         if (!Cull()) {
             return;
         }
@@ -36,22 +30,25 @@ public class CameraRenderer {
         SetUp();
         DrawVisibleGeometry();
         DrawUnsupportedShaders();
+        DrawGizmos();
         // Submit the previous cmd to the render queue
         Submit();
     }
 
-    void SetUp() {
+    private void SetUp() {
         /**
          * Will allow for correct camera setup and clearing. If we didn't do this, we would have a DrawGL render cmd,
          * which draws a full size quad. We should see a Clear(color + z + stencil).
          */
         ctx.SetupCameraProperties(cam);
-        buffer.ClearRenderTarget(true, true, Color.clear);
-        buffer.BeginSample(BufferName);
+        CameraClearFlags flags = cam.clearFlags;
+        buffer.ClearRenderTarget(flags <= CameraClearFlags.Depth, flags == CameraClearFlags.Color, 
+            flags == CameraClearFlags.Color ? cam.backgroundColor.linear : Color.clear);
+        buffer.BeginSample(SampleName);
         ExecuteBuffer();
     }
 
-    void DrawVisibleGeometry() {
+    private void DrawVisibleGeometry() {
         var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
         var drawingSettings   = new DrawingSettings(unlitShaderTagId, sortingSettings);
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
@@ -66,18 +63,18 @@ public class CameraRenderer {
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref  filteringSettings);
     }
 
-    void Submit() {
-        buffer.EndSample(BufferName);
+    private void Submit() {
+        buffer.EndSample(SampleName);
         ExecuteBuffer();
         ctx.Submit();
     }
 
-    void ExecuteBuffer() {
+    private void ExecuteBuffer() {
         ctx.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 
-    bool Cull() {
+    private bool Cull() {
         if (cam.TryGetCullingParameters(out var p)) {
             cullingResults = ctx.Cull(ref p);
             return true;
@@ -85,17 +82,4 @@ public class CameraRenderer {
         return false;
     }
 
-    void DrawUnsupportedShaders() {
-        if (errorMat == null) {
-            errorMat = new Material(Shader.Find("Hidden/InternalErrorShader"));
-        }
-        var drawingSettings = new DrawingSettings(legacyShaderTagIds[0], new SortingSettings(cam)) {
-            overrideMaterial = errorMat
-        };
-        for (int i = 1; i < legacyShaderTagIds.Length; i++) {
-            drawingSettings.SetShaderPassName(i, legacyShaderTagIds[i]);
-        }
-        var filteringSettings = FilteringSettings.defaultValue;
-        ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
-    }
 }
