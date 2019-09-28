@@ -4,6 +4,16 @@ using UnityEngine.Rendering;
 public class CameraRenderer {
 
     static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId[] legacyShaderTagIds = {
+        new ShaderTagId("Always"),
+        new ShaderTagId("ForwardBase"),
+        new ShaderTagId("Vertex"),
+        new ShaderTagId("PrepassBase"),
+        new ShaderTagId("VertexLMRGBM"),
+        new ShaderTagId("VertexLM")
+    };
+
+    static Material errorMat;
 
     /**
      * We want to see the cmd buffer in the profiler.
@@ -25,6 +35,7 @@ public class CameraRenderer {
 
         SetUp();
         DrawVisibleGeometry();
+        DrawUnsupportedShaders();
         // Submit the previous cmd to the render queue
         Submit();
     }
@@ -41,13 +52,18 @@ public class CameraRenderer {
     }
 
     void DrawVisibleGeometry() {
-        var sortingSettings = new SortingSettings(cam);
-        var drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings);
-        var filterSettings = new FilteringSettings(RenderQueueRange.all);
+        var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
+        var drawingSettings   = new DrawingSettings(unlitShaderTagId, sortingSettings);
+        var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
-        ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filterSettings);
-
+        ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         ctx.DrawSkybox(cam);
+
+        sortingSettings.criteria = SortingCriteria.CommonTransparent;
+        drawingSettings.sortingSettings = sortingSettings;
+        filteringSettings.renderQueueRange = RenderQueueRange.transparent;
+
+        ctx.DrawRenderers(cullingResults, ref drawingSettings, ref  filteringSettings);
     }
 
     void Submit() {
@@ -67,5 +83,19 @@ public class CameraRenderer {
             return true;
         }
         return false;
+    }
+
+    void DrawUnsupportedShaders() {
+        if (errorMat == null) {
+            errorMat = new Material(Shader.Find("Hidden/InternalErrorShader"));
+        }
+        var drawingSettings = new DrawingSettings(legacyShaderTagIds[0], new SortingSettings(cam)) {
+            overrideMaterial = errorMat
+        };
+        for (int i = 1; i < legacyShaderTagIds.Length; i++) {
+            drawingSettings.SetShaderPassName(i, legacyShaderTagIds[i]);
+        }
+        var filteringSettings = FilteringSettings.defaultValue;
+        ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
     }
 }
