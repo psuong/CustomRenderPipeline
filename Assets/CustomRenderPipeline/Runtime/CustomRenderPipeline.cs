@@ -5,6 +5,10 @@ public class CustomRenderPipeline : RenderPipeline {
 
     CameraRenderer renderer = new CameraRenderer();
 
+    public CustomRenderPipeline() {
+        GraphicsSettings.useScriptableRenderPipelineBatching = true;
+    }
+
     // This is similar to the UniversalRP, you can render different cameras in different ways.
     protected override void Render(ScriptableRenderContext context, Camera[] cameras) {
         foreach (var cam in cameras) {
