@@ -14,7 +14,7 @@ public partial class CameraRenderer {
     Camera cam;
     CullingResults cullingResults; // We want to figure out what can be rendered
 
-    public void Render(ScriptableRenderContext ctx, Camera cam) {
+    public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing) {
         this.ctx = ctx;
         this.cam = cam;
 
@@ -28,7 +28,7 @@ public partial class CameraRenderer {
         }
 
         SetUp();
-        DrawVisibleGeometry();
+        DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
         // Submit the previous cmd to the render queue
@@ -48,9 +48,12 @@ public partial class CameraRenderer {
         ExecuteBuffer();
     }
 
-    private void DrawVisibleGeometry() {
+    private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
         var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
-        var drawingSettings   = new DrawingSettings(unlitShaderTagId, sortingSettings);
+        var drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings) { 
+            enableDynamicBatching = useDynamicBatching,
+            enableInstancing      = useGPUInstancing 
+        };
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
