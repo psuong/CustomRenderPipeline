@@ -12,10 +12,12 @@ public partial class CameraRenderer {
      */
     const string BufferName = "Render Camera";
 
-    CommandBuffer buffer = new CommandBuffer() { name = BufferName };
-    ScriptableRenderContext ctx;
-    Camera cam;
-    CullingResults cullingResults; // We want to figure out what can be rendered
+    private CommandBuffer buffer = new CommandBuffer() { name = BufferName };
+    private Lighting lighting    = new Lighting() {};
+
+    private ScriptableRenderContext ctx;
+    private Camera cam;
+    private CullingResults cullingResults; // We want to figure out what can be rendered
 
     public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing) {
         this.ctx = ctx;
@@ -31,6 +33,7 @@ public partial class CameraRenderer {
         }
 
         SetUp();
+        lighting.SetUp(ctx);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
