@@ -3,7 +3,10 @@ using UnityEngine.Rendering;
 
 public partial class CameraRenderer {
 
-    static ShaderTagId unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId 
+        UnlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
+        LitShaderTagId = new ShaderTagId("CustomLit");
+
     /**
      * We want to see the cmd buffer in the profiler.
      */
@@ -50,10 +53,11 @@ public partial class CameraRenderer {
 
     private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
         var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
-        var drawingSettings = new DrawingSettings(unlitShaderTagId, sortingSettings) { 
+        var drawingSettings = new DrawingSettings(UnlitShaderTagId, sortingSettings) { 
             enableDynamicBatching = useDynamicBatching,
             enableInstancing      = useGPUInstancing 
         };
+        drawingSettings.SetShaderPassName(1, LitShaderTagId);
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);

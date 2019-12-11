@@ -15,6 +15,7 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 
+// Realised I dont need this since the standard Common.hlsl has these functions already
 //float3 TransformObjectToWorld(float3 positionOS) 
 //{
 //    return mul(unity_ObjectToWorld, float4(positionOS, 1.0)).xyz;
