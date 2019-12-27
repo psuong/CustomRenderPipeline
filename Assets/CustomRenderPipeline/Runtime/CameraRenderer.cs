@@ -12,12 +12,12 @@ public partial class CameraRenderer {
      */
     const string BufferName = "Render Camera";
 
-    private CommandBuffer buffer = new CommandBuffer() { name = BufferName };
-    private Lighting lighting    = new Lighting() {};
+    CommandBuffer buffer = new CommandBuffer() { name = BufferName };
+    Lighting lighting    = new Lighting() {};
 
-    private ScriptableRenderContext ctx;
-    private Camera cam;
-    private CullingResults cullingResults; // We want to figure out what can be rendered
+    ScriptableRenderContext ctx;
+    Camera cam;
+    CullingResults cullingResults; // We want to figure out what can be rendered
 
     public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing) {
         this.ctx = ctx;
@@ -33,7 +33,7 @@ public partial class CameraRenderer {
         }
 
         SetUp();
-        lighting.SetUp(ctx);
+        lighting.SetUp(ctx, cullingResults);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -41,7 +41,7 @@ public partial class CameraRenderer {
         Submit();
     }
 
-    private void SetUp() {
+    void SetUp() {
         /**
          * Will allow for correct camera setup and clearing. If we didn't do this, we would have a DrawGL render cmd,
          * which draws a full size quad. We should see a Clear(color + z + stencil).
@@ -54,7 +54,7 @@ public partial class CameraRenderer {
         ExecuteBuffer();
     }
 
-    private void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
+    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
         var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
         var drawingSettings = new DrawingSettings(UnlitShaderTagId, sortingSettings) { 
             enableDynamicBatching = useDynamicBatching,
@@ -73,23 +73,22 @@ public partial class CameraRenderer {
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref  filteringSettings);
     }
 
-    private void Submit() {
+    void Submit() {
         buffer.EndSample(SampleName);
         ExecuteBuffer();
         ctx.Submit();
     }
 
-    private void ExecuteBuffer() {
+    void ExecuteBuffer() {
         ctx.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 
-    private bool Cull() {
+    bool Cull() {
         if (cam.TryGetCullingParameters(out var p)) {
             cullingResults = ctx.Cull(ref p);
             return true;
         }
         return false;
     }
-
 }

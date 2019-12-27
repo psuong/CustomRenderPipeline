@@ -9,7 +9,9 @@ public class CustomRenderPipeline : RenderPipeline {
     public CustomRenderPipeline(bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher) {
         this.useDynamicBatching = useDynamicBatching;
         this.useGPUInstancing   = useGPUInstancing;
+
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
+        GraphicsSettings.lightsUseLinearIntensity            = true;
     }
 
     // This is similar to the UniversalRP, you can render different cameras in different ways.
