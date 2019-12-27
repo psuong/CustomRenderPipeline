@@ -14,11 +14,20 @@ float3 GetLighting(Surface surface, Light light)
 
 float3 GetLighting(Surface surface)
 {
+    // Obsolete now - but left here as reference
     // Allow for albedo - how much light is diffusely reflected by a surface :)
     // return surface.normal.y * surface.color;
 
+    // Obsolete now - but left here as reference
     // We want to take into consideration the Directional Light
-    return GetLighting(surface, GetDirectionalLight());
+    // return GetLighting(surface, GetDirectionalLight());
+
+    float3 color = 0.0;
+    for (int i = 0; i < GetDirectionalLightCount(); i++)
+    {
+        color += GetLighting(surface, GetDirectionalLight(i));
+    }
+    return color;
 }
 
 #endif

@@ -1,4 +1,3 @@
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,8 +6,8 @@ public class Lighting {
     const string BufferName    = "Lighting";
     const int MaxDirLightCount = 4;
 
-    static int DirLightCountID      = Shader.PropertyToID("_DirectionLightCount"),
-               DirLightColorsID     = Shader.PropertyToID("_DIrectionLightColors"),
+    static int DirLightCountID      = Shader.PropertyToID("_DirectionalLightCount"),
+               DirLightColorsID     = Shader.PropertyToID("_DirectionalLightColors"),
                DirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
 
     static Vector4[] 
@@ -25,7 +24,13 @@ public class Lighting {
         this.cullingResults = cullingResults;
 
         buffer.BeginSample(BufferName);
+
+        // SetUpDirectionalLights() is obsolete since it only supports 1 light
         // SetUpDirectionalLights();
+        
+        // Set up all visible lights we want to support - for now only Directional ones :)
+        SetUpLights();
+
         buffer.EndSample(BufferName);
         ctx.ExecuteCommandBuffer(buffer);
         buffer.Clear();
@@ -46,7 +51,7 @@ public class Lighting {
             }
         }
 
-        buffer.SetGlobalInt(DirLightCountID, visibleLights.Length);
+        buffer.SetGlobalInt(DirLightCountID, dirLightCount);
         buffer.SetGlobalVectorArray(DirLightColorsID, DirLightColors);
         buffer.SetGlobalVectorArray(DirLightDirectionsID, DirLightDirections);
     }
