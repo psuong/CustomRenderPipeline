@@ -3,6 +3,7 @@
 
 // We must import the Common.hlsl first before defining the UnityInput.hlsl
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
 #include "UnityInput.hlsl"
 
 // A couple of defined matrices that Unity's Core RP provides
@@ -25,5 +26,10 @@
 //{
 //    return mul(unity_MatrixVP, float4(positionWS, 1.0));
 //}
+
+float Square(float v)
+{
+    return v * v;
+}
 
 #endif

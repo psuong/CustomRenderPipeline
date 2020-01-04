@@ -2,11 +2,14 @@
 #define CUSTOM_SURFACE_INLCUDED
 
 
-struct Surface 
+struct Surface
 {
     float3 normal;
+    float3 viewDirection;
     float3 color;
-    float alpha;
+    float  alpha;
+    float  metallic;
+    float  smoothness;
 };
 
 #endif
