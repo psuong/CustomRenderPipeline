@@ -2,12 +2,16 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 [CreateAssetMenu(menuName = "Rendering/CustomRenderPipeline")]
-public class CustomRenderPipelineAsset : RenderPipelineAsset {
+public class CustomRenderPipelineAsset : RenderPipelineAsset 
+{
+    [SerializeField]
+    bool useDynamicBatching = true, useGPUInstancing = true, useSRPBatcher = true;
 
     [SerializeField]
-    private bool useDynamicBatching = true, useGPUInstancing = true, useSRPBatcher = true;
+    ShadowSettings shadows = default;
 
-    protected override RenderPipeline CreatePipeline() {
-        return new CustomRenderPipeline(useDynamicBatching, useGPUInstancing, useSRPBatcher);
+    protected override RenderPipeline CreatePipeline() 
+    {
+        return new CustomRenderPipeline(useDynamicBatching, useGPUInstancing, useSRPBatcher, shadows);
     }
 }

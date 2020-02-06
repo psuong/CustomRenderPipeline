@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class Lighting {
-
+public class Lighting 
+{
     const string BufferName    = "Lighting";
     const int MaxDirLightCount = 4;
 
@@ -16,11 +16,15 @@ public class Lighting {
 
     CullingResults cullingResults;
 
-    CommandBuffer buffer = new CommandBuffer {
+    CommandBuffer buffer = new CommandBuffer 
+    {
         name = BufferName
     };
 
-    public void SetUp(ScriptableRenderContext ctx, CullingResults cullingResults) {
+    Shadows shadows = new Shadows();
+
+    public void SetUp(ScriptableRenderContext ctx, CullingResults cullingResults, ShadowSettings shadowSettings) 
+    {
         this.cullingResults = cullingResults;
 
         buffer.BeginSample(BufferName);
@@ -28,15 +32,19 @@ public class Lighting {
         // SetUpDirectionalLights() is obsolete since it only supports 1 light
         // SetUpDirectionalLights();
         
+        // Set up our shadows 
+        shadows.SetUp(ctx, cullingResults, shadowSettings);
+
         // Set up all visible lights we want to support - for now only Directional ones :)
         SetUpLights();
 
         buffer.EndSample(BufferName);
-        ctx.ExecuteCommandBuffer(buffer);
+        ctx   .ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 
-    void SetUpLights() {
+    void SetUpLights() 
+    {
         var visibleLights = cullingResults.visibleLights;
         int dirLightCount = 0;
         for (int i = 0; i < visibleLights.Length; i++) {
@@ -56,7 +64,8 @@ public class Lighting {
         buffer.SetGlobalVectorArray(DirLightDirectionsID, DirLightDirections);
     }
 
-    void SetUpDirectionLight(int index, ref VisibleLight light) {
+    void SetUpDirectionLight(int index, ref VisibleLight light) 
+    {
         DirLightColors[index]     = light.finalColor;
         DirLightDirections[index] = -light.localToWorldMatrix.GetColumn(2);
     }
@@ -73,4 +82,3 @@ public class Lighting {
     }
     */
 }
-

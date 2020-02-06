@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public partial class CameraRenderer {
-
+public partial class CameraRenderer 
+{
     static ShaderTagId 
         UnlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
         LitShaderTagId = new ShaderTagId("CustomLit");
@@ -19,7 +19,9 @@ public partial class CameraRenderer {
     Camera cam;
     CullingResults cullingResults; // We want to figure out what can be rendered
 
-    public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing) {
+    public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing,
+        ShadowSettings shadowSettings) 
+    {
         this.ctx = ctx;
         this.cam = cam;
 
@@ -28,12 +30,13 @@ public partial class CameraRenderer {
         // Allow UI Drawing in the scene view
         PrepareForSceneWindow();
 
-        if (!Cull()) {
+        if (!Cull(shadowSettings.MaxDistance)) 
+        {
             return;
         }
 
         SetUp();
-        lighting.SetUp(ctx, cullingResults);
+        lighting.SetUp(ctx, cullingResults, shadowSettings);
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
@@ -41,7 +44,8 @@ public partial class CameraRenderer {
         Submit();
     }
 
-    void SetUp() {
+    void SetUp() 
+    {
         /**
          * Will allow for correct camera setup and clearing. If we didn't do this, we would have a DrawGL render cmd,
          * which draws a full size quad. We should see a Clear(color + z + stencil).
@@ -54,9 +58,11 @@ public partial class CameraRenderer {
         ExecuteBuffer();
     }
 
-    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
-        var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
-        var drawingSettings = new DrawingSettings(UnlitShaderTagId, sortingSettings) { 
+    void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) 
+    {
+        var sortingSettings = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
+        var drawingSettings = new DrawingSettings(UnlitShaderTagId, sortingSettings)
+        {
             enableDynamicBatching = useDynamicBatching,
             enableInstancing      = useGPUInstancing 
         };
@@ -66,27 +72,32 @@ public partial class CameraRenderer {
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
         ctx.DrawSkybox(cam);
 
-        sortingSettings.criteria = SortingCriteria.CommonTransparent;
-        drawingSettings.sortingSettings = sortingSettings;
+        sortingSettings.criteria           = SortingCriteria.CommonTransparent;
+        drawingSettings.sortingSettings    = sortingSettings;
         filteringSettings.renderQueueRange = RenderQueueRange.transparent;
 
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref  filteringSettings);
     }
 
-    void Submit() {
+    void Submit() 
+    {
         buffer.EndSample(SampleName);
         ExecuteBuffer();
         ctx.Submit();
     }
 
-    void ExecuteBuffer() {
+    void ExecuteBuffer() 
+    {
         ctx.ExecuteCommandBuffer(buffer);
         buffer.Clear();
     }
 
-    bool Cull() {
-        if (cam.TryGetCullingParameters(out var p)) {
-            cullingResults = ctx.Cull(ref p);
+    bool Cull(float maxDistance) 
+    {
+        if (cam.TryGetCullingParameters(out var p)) 
+        {
+            p.shadowDistance = Mathf.Min(maxDistance, cam.farClipPlane);
+            cullingResults   = ctx.Cull(ref p);
             return true;
         }
         return false;
