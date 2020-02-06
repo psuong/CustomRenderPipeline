@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class Lighting 
+public class Lighting
 {
-    const string BufferName    = "Lighting";
-    const int MaxDirLightCount = 4;
+    const string BufferName       = "Lighting";
+    const int    MaxDirLightCount = 4;
 
     static int DirLightCountID      = Shader.PropertyToID("_DirectionalLightCount"),
                DirLightColorsID     = Shader.PropertyToID("_DirectionalLightColors"),
@@ -37,6 +37,7 @@ public class Lighting
 
         // Set up all visible lights we want to support - for now only Directional ones :)
         SetUpLights();
+        shadows.Render();
 
         buffer.EndSample(BufferName);
         ctx   .ExecuteCommandBuffer(buffer);
@@ -68,6 +69,8 @@ public class Lighting
     {
         DirLightColors[index]     = light.finalColor;
         DirLightDirections[index] = -light.localToWorldMatrix.GetColumn(2);
+
+        shadows.ReserveDirectionalShadows(light.light, index);
     }
 
     /*
