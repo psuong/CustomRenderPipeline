@@ -44,6 +44,11 @@ public class Lighting
         buffer.Clear();
     }
 
+    public void CleanUp()
+    {
+        shadows.CleanUp();
+    }
+
     void SetUpLights() 
     {
         var visibleLights = cullingResults.visibleLights;

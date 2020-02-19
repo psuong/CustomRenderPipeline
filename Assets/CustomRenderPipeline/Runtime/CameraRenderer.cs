@@ -35,11 +35,28 @@ public partial class CameraRenderer
             return;
         }
 
-        SetUp();
+        // To keep the sampling correct in the frame debugger - start the sample for shadows
+        buffer.BeginSample(SampleName);
+        ExecuteBuffer();
+
+        /**
+         * Typically, we should set up lighting, but because we're setting up shadows, we end up switching to the 
+         * shadow atlas before rendering the regular geometry. If we didn't we would get rendering errors in the scene
+         * and game view.
+         */
         lighting.SetUp(ctx, cullingResults, shadowSettings);
+
+        // End the sampling for shadows.
+        buffer.EndSample(SampleName);
+
+        SetUp();
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
+
+        // Request releasing the previous render frame's memory
+        lighting.CleanUp();
+
         // Submit the previous cmd to the render queue
         Submit();
     }
