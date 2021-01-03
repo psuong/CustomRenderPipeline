@@ -35,11 +35,23 @@ public partial class CameraRenderer {
             return;
         }
 
+        buffer.BeginSample(SampleName);
+        ExecuteBuffer();
+
+        // Do the lighting setup first to not affect the usual rendering.
+        lighting.SetUp(ctx, cullingResults, shadowSettings);
+
+        buffer.EndSample(SampleName);
+
         SetUp();
-        lighting.SetUp(ctx, cullingResults);
+
         DrawVisibleGeometry(useDynamicBatching, useGPUInstancing);
         DrawUnsupportedShaders();
         DrawGizmos();
+
+        // Clean up the lighting, which cleans up the shadows also.
+        lighting.CleanUp();
+
         // Submit the previous cmd to the render queue
         Submit();
     }

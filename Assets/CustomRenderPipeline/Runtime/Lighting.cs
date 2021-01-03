@@ -6,34 +6,42 @@ public class Lighting {
     const string BufferName    = "Lighting";
     const int MaxDirLightCount = 4;
 
-    static int DirLightCountID      = Shader.PropertyToID("_DirectionalLightCount"),
-               DirLightColorsID     = Shader.PropertyToID("_DirectionalLightColors"),
-               DirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
+    static readonly int DirLightCountID      = Shader.PropertyToID("_DirectionalLightCount");
+    static readonly int DirLightColorsID     = Shader.PropertyToID("_DirectionalLightColors");
+    static readonly int DirLightDirectionsID = Shader.PropertyToID("_DirectionalLightDirections");
 
-    static Vector4[] 
-        DirLightColors     = new Vector4[MaxDirLightCount],
-        DirLightDirections = new Vector4[MaxDirLightCount];
+    static Vector4[] DirLightColors     = new Vector4[MaxDirLightCount];
+    static Vector4[] DirLightDirections = new Vector4[MaxDirLightCount];
 
     CullingResults cullingResults;
 
-    CommandBuffer buffer = new CommandBuffer {
-        name = BufferName
-    };
+    Shadows shadows = new Shadows();
+    CommandBuffer buffer = new CommandBuffer { name = BufferName };
 
-    public void SetUp(ScriptableRenderContext ctx, CullingResults cullingResults) {
+    public void SetUp(ScriptableRenderContext ctx, CullingResults cullingResults, ShadowSettings shadowSettings) {
         this.cullingResults = cullingResults;
 
         buffer.BeginSample(BufferName);
 
         // SetUpDirectionalLights() is obsolete since it only supports 1 light
         // SetUpDirectionalLights();
-        
+
+        // Lighting sets up shadows
+        shadows.SetUp(ctx, cullingResults, shadowSettings);
+
         // Set up all visible lights we want to support - for now only Directional ones :)
         SetUpLights();
+
+        // Render the shadows
+        shadows.Render();
 
         buffer.EndSample(BufferName);
         ctx.ExecuteCommandBuffer(buffer);
         buffer.Clear();
+    }
+
+    public void CleanUp() {
+        shadows.CleanUp();
     }
 
     void SetUpLights() {
@@ -56,9 +64,11 @@ public class Lighting {
         buffer.SetGlobalVectorArray(DirLightDirectionsID, DirLightDirections);
     }
 
-    void SetUpDirectionLight(int index, ref VisibleLight light) {
-        DirLightColors[index]     = light.finalColor;
-        DirLightDirections[index] = -light.localToWorldMatrix.GetColumn(2);
+    void SetUpDirectionLight(int index, ref VisibleLight visibleLight) {
+        DirLightColors[index]     = visibleLight.finalColor;
+        DirLightDirections[index] = -visibleLight.localToWorldMatrix.GetColumn(2);
+
+        shadows.ReserveDirectionalShadows(visibleLight.light, index);
     }
 
     /*
