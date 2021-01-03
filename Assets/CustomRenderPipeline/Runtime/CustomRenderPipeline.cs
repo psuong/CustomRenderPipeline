@@ -22,13 +22,12 @@ public class CustomRenderPipeline : RenderPipeline {
 
         GraphicsSettings.useScriptableRenderPipelineBatching = useSRPBatcher;
         GraphicsSettings.lightsUseLinearIntensity            = true;
-
     }
 
     // This is similar to the UniversalRP, you can render different cameras in different ways.
     protected override void Render(ScriptableRenderContext context, Camera[] cameras) {
         foreach (var cam in cameras) {
-            renderer.Render(context, cam, useDynamicBatching, useGPUInstancing);
+            renderer.Render(context, cam, useDynamicBatching, useGPUInstancing, shadows);
         }
     }
 }
