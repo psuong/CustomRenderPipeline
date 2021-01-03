@@ -3,32 +3,35 @@ using UnityEngine.Rendering;
 
 public partial class CameraRenderer {
 
-    static ShaderTagId 
-        UnlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
-        LitShaderTagId = new ShaderTagId("CustomLit");
+    static ShaderTagId UnlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    static ShaderTagId LitShaderTagId   = new ShaderTagId("CustomLit");
 
-    /**
-     * We want to see the cmd buffer in the profiler.
-     */
+    // We want to see the cmd buffer in the profiler.
     const string BufferName = "Render Camera";
 
     CommandBuffer buffer = new CommandBuffer() { name = BufferName };
     Lighting lighting    = new Lighting() {};
 
     ScriptableRenderContext ctx;
-    Camera cam;
+    Camera camera;
     CullingResults cullingResults; // We want to figure out what can be rendered
 
-    public void Render(ScriptableRenderContext ctx, Camera cam, bool useDynamicBatching, bool useGPUInstancing) {
+    public void Render(
+        ScriptableRenderContext ctx, 
+        Camera camera, 
+        bool useDynamicBatching, 
+        bool useGPUInstancing,
+        ShadowSettings shadowSettings) {
+
         this.ctx = ctx;
-        this.cam = cam;
+        this.camera = camera;
 
         // Allow secondary cameras
         PrepareBuffer();
         // Allow UI Drawing in the scene view
         PrepareForSceneWindow();
 
-        if (!Cull()) {
+        if (!Cull(shadowSettings.MaxDistance)) {
             return;
         }
 
@@ -46,16 +49,16 @@ public partial class CameraRenderer {
          * Will allow for correct camera setup and clearing. If we didn't do this, we would have a DrawGL render cmd,
          * which draws a full size quad. We should see a Clear(color + z + stencil).
          */
-        ctx.SetupCameraProperties(cam);
-        CameraClearFlags flags = cam.clearFlags;
+        ctx.SetupCameraProperties(camera);
+        CameraClearFlags flags = camera.clearFlags;
         buffer.ClearRenderTarget(flags <= CameraClearFlags.Depth, flags == CameraClearFlags.Color, 
-            flags == CameraClearFlags.Color ? cam.backgroundColor.linear : Color.clear);
+            flags == CameraClearFlags.Color ? camera.backgroundColor.linear : Color.clear);
         buffer.BeginSample(SampleName);
         ExecuteBuffer();
     }
 
     void DrawVisibleGeometry(bool useDynamicBatching, bool useGPUInstancing) {
-        var sortingSettings   = new SortingSettings(cam) { criteria = SortingCriteria.CommonOpaque };
+        var sortingSettings   = new SortingSettings(camera) { criteria = SortingCriteria.CommonOpaque };
         var drawingSettings = new DrawingSettings(UnlitShaderTagId, sortingSettings) { 
             enableDynamicBatching = useDynamicBatching,
             enableInstancing      = useGPUInstancing 
@@ -64,7 +67,7 @@ public partial class CameraRenderer {
         var filteringSettings = new FilteringSettings(RenderQueueRange.opaque);
 
         ctx.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
-        ctx.DrawSkybox(cam);
+        ctx.DrawSkybox(camera);
 
         sortingSettings.criteria = SortingCriteria.CommonTransparent;
         drawingSettings.sortingSettings = sortingSettings;
@@ -84,8 +87,9 @@ public partial class CameraRenderer {
         buffer.Clear();
     }
 
-    bool Cull() {
-        if (cam.TryGetCullingParameters(out var p)) {
+    bool Cull(float maxShadowDistance) {
+        if (camera.TryGetCullingParameters(out var p)) {
+            p.shadowDistance = Mathf.Min(maxShadowDistance, camera.farClipPlane);
             cullingResults = ctx.Cull(ref p);
             return true;
         }
