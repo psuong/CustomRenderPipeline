@@ -3,11 +3,6 @@
 
 #include "../ShaderLibrary/Common.hlsl"
 
-// Doesn't allow instancing support so we can get rid of this
-//CBUFFER_START(UnityPerMaterial)
-//    float4 _BaseColor;
-//CBUFFER_END
-
 // Must be declared in the global scope as all shaders can access these resources
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);

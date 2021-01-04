@@ -93,7 +93,21 @@ public class Shadows {
         var light = ShadowedDirectionalLights[index];
         var shadowSettings = new ShadowDrawingSettings(cullingResults, index);
 
-        // TODO: Continue filling in the render directional shadows (Directional Shadows).
+        cullingResults.ComputeDirectionalShadowMatricesAndCullingPrimitives(
+            light.VisibleLightIndex, 
+            0, 
+            1, 
+            Vector3.zero, 
+            tileSize, 
+            0f, 
+            out Matrix4x4 viewMatrix, 
+            out Matrix4x4 projMatrix, 
+            out ShadowSplitData shadowSplitData);
+
+        shadowSettings.splitData = shadowSplitData;
+        buffer.SetViewProjectionMatrices(viewMatrix, projMatrix);
+        ExecuteBuffer();
+        context.DrawShadows(ref shadowSettings);
     }
 }
 
